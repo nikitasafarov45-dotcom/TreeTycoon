@@ -1,15 +1,17 @@
-// game.js - ДЕРЕВЬЯ С ОБЪЕМОМ, ПЕНЬКИ НЕ СМЕЩАЮТСЯ
+// game.js - МОНОТОННАЯ ТРАВА, ПТИЦА И ЦВЕТЫ КАК БЫЛИ
 
 // ==================== КОНСТАНТЫ ====================
 const CONFIG = {
-    TREE_RADIUS: 32,           // Увеличил диаметр
+    TREE_RADIUS: 32,
     PLAYER_SPEED: 120,
     CHOP_DURATION: 1000,
     SELL_INTERVAL: 10000,
     PRICE_PER_LOG: 10,
     TREE_REGEN_MS: 15000,
     SAVE_KEY: 'lumberjack_save',
-    WAREHOUSE_Y: 100
+    WAREHOUSE_Y: 100,
+    FLOWERS_COUNT: 12,
+    BIRD_SPEED: 60
 };
 
 // ==================== СОСТОЯНИЕ ====================
@@ -17,6 +19,9 @@ const Game = {
     player: null,
     target: null,
     trees: [],
+    flowers: [],
+    bird: null,
+    birdDirection: 1,
     carry: 0,
     carryMax: 10,
     warehouse: 0,
@@ -31,23 +36,19 @@ const Game = {
 
 // ==================== ГРАФИКА ДЕРЕВЬЕВ ====================
 const TreeGraphics = {
-    // Создание дерева с объемом (два круга)
     createTree(scene, x, y) {
-        // Основной круг (большой)
         const mainCircle = scene.add.circle(0, 0, CONFIG.TREE_RADIUS, 0x2e8b57);
         mainCircle.setStrokeStyle(2, 0x1e5b3f);
         mainCircle.setOrigin(0.5, 0.5);
         
-        // Второй круг поменьше для объема
         const volumeCircle = scene.add.circle(0, 0, CONFIG.TREE_RADIUS * 0.7, 0x3cb371);
         volumeCircle.setStrokeStyle(1, 0x2e8b57);
         volumeCircle.setOrigin(0.5, 0.5);
         
-        // Группируем оба круга
-        const treeGroup = scene.add.container(x, y, [mainCircle, volumeCircle]);
+        const treeContainer = scene.add.container(x, y, [mainCircle, volumeCircle]);
         
         return {
-            container: treeGroup,
+            container: treeContainer,
             mainCircle: mainCircle,
             volumeCircle: volumeCircle,
             stump: null,
@@ -58,42 +59,132 @@ const TreeGraphics = {
         };
     },
     
-    // Создание пенька
     createStump(scene, x, y) {
         const stump = scene.add.circle(0, 0, CONFIG.TREE_RADIUS * 0.5, 0x8b4513);
         stump.setStrokeStyle(1, 0x5d2906);
         stump.setOrigin(0.5, 0.5);
         
-        // Создаем контейнер для точного позиционирования
         const stumpContainer = scene.add.container(x, y, [stump]);
         
         return {
             container: stumpContainer,
             circle: stump
         };
+    }
+};
+
+// ==================== ДЕКОРАЦИИ (ПТИЦА И ЦВЕТЫ КАК БЫЛИ) ====================
+const Decorations = {
+    // Цветы как были (с лепестками и стеблями)
+    createFlowers(scene, width, height) {
+        const flowers = [];
+        const flowerColors = [0xFF69B4, 0xFFD700, 0x87CEEB, 0x98FB98, 0xDDA0DD];
+        
+        for (let i = 0; i < CONFIG.FLOWERS_COUNT; i++) {
+            let x, y, validPosition;
+            
+            do {
+                validPosition = true;
+                x = 50 + Math.random() * (width - 100);
+                y = 50 + Math.random() * (height - 100);
+                
+                if (Game.trees.length > 0) {
+                    for (const tree of Game.trees) {
+                        const dist = Phaser.Math.Distance.Between(x, y, tree.x, tree.y);
+                        if (dist < CONFIG.TREE_RADIUS * 2) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (window.warehouse) {
+                    const dist = Phaser.Math.Distance.Between(x, y, window.warehouse.x, window.warehouse.y);
+                    if (dist < 100) validPosition = false;
+                }
+                
+            } while (!validPosition);
+            
+            // Центр цветка
+            const color = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+            const center = scene.add.circle(x, y, 3, color);
+            
+            // Лепестки (4-6 штук)
+            const petals = [];
+            const petalCount = 4 + Math.floor(Math.random() * 3);
+            
+            for (let p = 0; p < petalCount; p++) {
+                const angle = (p / petalCount) * Math.PI * 2;
+                const px = x + Math.cos(angle) * 8;
+                const py = y + Math.sin(angle) * 8;
+                const petal = scene.add.circle(px, py, 4, color);
+                petals.push(petal);
+            }
+            
+            // Стебель
+            const stemLength = 10 + Math.random() * 15;
+            const stem = scene.add.rectangle(x, y + stemLength/2, 2, stemLength, 0x228B22);
+            stem.setOrigin(0.5, 1);
+            
+            flowers.push({
+                center: center,
+                petals: petals,
+                stem: stem,
+                x: x,
+                y: y
+            });
+        }
+        
+        return flowers;
     },
     
-    // Уничтожение дерева
-    destroyTree(tree) {
-        if (tree.container) {
-            tree.container.destroy();
-        }
-        if (tree.mainCircle) {
-            tree.mainCircle.destroy();
-        }
-        if (tree.volumeCircle) {
-            tree.volumeCircle.destroy();
-        }
+    // Птичка как была (с телом, головой, клювом, глазом, крылом)
+    createBird(scene, width, height) {
+        // Тело птички
+        const body = scene.add.circle(0, 0, 6, 0x8B4513);
+        
+        // Голова
+        const head = scene.add.circle(8, -3, 4, 0x8B4513);
+        
+        // Клюв
+        const beak = scene.add.triangle(12, -3, 0, 0, 6, 2, 0, 4, 0xFFA500);
+        
+        // Глаз
+        const eye = scene.add.circle(9, -4, 1, 0x000000);
+        
+        // Крыло
+        const wing = scene.add.ellipse(-4, 4, 10, 6, 0x8B4513);
+        
+        // Контейнер для птички
+        const birdContainer = scene.add.container(-50, height * 0.2, [body, head, beak, eye, wing]);
+        
+        return birdContainer;
     },
     
-    // Уничтожение пенька
-    destroyStump(stump) {
-        if (stump.container) {
-            stump.container.destroy();
+    // Обновление птички (полет с анимацией крыльев)
+    updateBird(bird, delta, width) {
+        if (!bird) return;
+        
+        bird.x += CONFIG.BIRD_SPEED * Game.birdDirection * (delta / 1000);
+        
+        // Анимация крыльев (покачивание)
+        if (bird.list[4]) { // крыло
+            bird.list[4].scaleY = 0.8 + 0.2 * Math.sin(Date.now() / 200);
         }
-        if (stump.circle) {
-            stump.circle.destroy();
+        
+        // Разворот при достижении края
+        if (bird.x > width + 50) {
+            bird.x = width + 50;
+            Game.birdDirection = -1;
+            bird.scaleX = -1; // отражаем по горизонтали
+        } else if (bird.x < -50) {
+            bird.x = -50;
+            Game.birdDirection = 1;
+            bird.scaleX = 1; // нормальное отображение
         }
+        
+        // Легкое покачивание по вертикали
+        bird.y += Math.sin(Date.now() / 500) * 0.5;
     }
 };
 
@@ -116,10 +207,10 @@ const TreeManager = {
     chopTree(tree, scene) {
         if (!tree.alive) return;
         
-        // Уничтожаем дерево
-        TreeGraphics.destroyTree(tree);
+        tree.container.destroy();
+        tree.mainCircle.destroy();
+        tree.volumeCircle.destroy();
         
-        // Создаем пенек на ТОЧНОЙ позиции
         tree.stump = TreeGraphics.createStump(scene, tree.x, tree.y);
         tree.alive = false;
         tree.regenTimer = CONFIG.TREE_REGEN_MS;
@@ -131,13 +222,12 @@ const TreeManager = {
     restoreTree(tree, scene) {
         if (tree.alive) return;
         
-        // Уничтожаем пенек
         if (tree.stump) {
-            TreeGraphics.destroyStump(tree.stump);
+            tree.stump.container.destroy();
+            tree.stump.circle.destroy();
             tree.stump = null;
         }
         
-        // Восстанавливаем дерево на ТОЧНОЙ позиции
         const newTree = TreeGraphics.createTree(scene, tree.x, tree.y);
         tree.container = newTree.container;
         tree.mainCircle = newTree.mainCircle;
@@ -166,16 +256,13 @@ const Shop = {
         
         const {width, height} = scene.scale;
         
-        // Фон
         const bg = scene.add.rectangle(width/2, height/2, 400, 300, 0xffffff)
             .setStrokeStyle(3, 0x8b4513).setDepth(20);
         
-        // Заголовок
         const title = scene.add.text(width/2, height/2 - 100, 'УЛУЧШЕНИЯ', {
             font: '22px Arial', fill: '#8b4513', fontWeight: 'bold'
         }).setOrigin(0.5).setDepth(21);
         
-        // Улучшения
         const axePrice = Math.floor(50 * Math.pow(1.5, Game.axeLevel));
         const capPrice = Math.floor(100 * Math.pow(1.6, Game.capacityLevel));
         
@@ -204,7 +291,6 @@ const Shop = {
             }
         }).setDepth(21);
         
-        // Закрыть
         const closeBtn = scene.add.text(width/2, height/2 + 120, 'ЗАКРЫТЬ', {
             font: '18px Arial', fill: '#fff', backgroundColor: '#8b4513',
             padding: {x: 20, y: 10}
@@ -260,7 +346,9 @@ const Save = {
                     tree.regenTimer = tData.regenTimer || 0;
                     
                     if (!tData.alive) {
-                        TreeGraphics.destroyTree(tree);
+                        tree.container?.destroy();
+                        tree.mainCircle?.destroy();
+                        tree.volumeCircle?.destroy();
                         tree.stump = TreeGraphics.createStump(scene, tData.x, tData.y);
                     }
                 });
@@ -273,7 +361,7 @@ const Save = {
 const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
-    backgroundColor: '#b7e0a6',
+    backgroundColor: '#b7e0a6', // МОНОТОННАЯ ТРАВА КАК В НАЧАЛЕ
     scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -294,7 +382,6 @@ function create() {
     const scene = this;
     const {width, height} = scene.scale;
     
-    // Telegram
     if (window.Telegram?.WebApp) {
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
@@ -309,6 +396,13 @@ function create() {
     // Деревья
     const positions = TreeManager.getTreePositions(width, height);
     Game.trees = positions.map(pos => TreeManager.createTree(scene, pos.x, pos.y));
+    
+    // Цветы (как были)
+    Game.flowers = Decorations.createFlowers(scene, width, height);
+    
+    // Птичка (как была)
+    Game.bird = Decorations.createBird(scene, width, height);
+    Game.bird.setDepth(5);
     
     // Склад
     const whX = width - 80;
@@ -384,7 +478,10 @@ function update(time, delta) {
     const scene = game.scene.scenes[0];
     if (!scene) return;
     
-    // Движение
+    // Птичка
+    Decorations.updateBird(Game.bird, delta, scene.scale.width);
+    
+    // Движение игрока
     if (!Game.chopping && Game.target) {
         const dx = Game.target.x - Game.player.x;
         const dy = Game.target.y - Game.player.y;
@@ -478,7 +575,6 @@ function update(time, delta) {
     if (time % 500 < delta) UI.update();
 }
 
-// Ресайз
 window.addEventListener('resize', () => {
     game.scale?.resize(window.innerWidth, window.innerHeight);
 });
