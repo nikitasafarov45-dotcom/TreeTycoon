@@ -1,52 +1,28 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-
-    <!-- Масштабирование для мобильных устройств (Telegram WebApp) -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <title>Лесоруб Tycoon</title>
-
-    <!-- Подключаем CSS -->
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Подключаем Phaser 3 (официальный CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
-
-    <!-- Telegram WebApp API (обязательно для Mini App) -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Лесоруб Tycoon</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-
 <body>
+  <div id="game"></div>
 
-    <!-- ==============================
-         ВЕРХНЯЯ ПАНЕЛЬ (HUD)
-    =============================== -->
-    <div id="hud">
-        <div id="hud-left">
-            <div id="money">💰 0</div>
-            <div id="wood-storage">🪵 0</div>
-        </div>
-
-        <div id="hud-right">
-            <button id="shop-btn">Улучшение</button>
-        </div>
+  <div id="hud">
+    <div id="hud-left">
+      <div id="money">💰 0</div>
+      <div id="wood-storage">🪵 0</div>
     </div>
-
-    <!-- ==============================
-         НИЖНЯЯ ПАНЕЛЬ (ГРУЗ)
-    =============================== -->
-    <div id="bottom-info">
-        Груз: 0/10
+    <div id="hud-right">
+      <button id="shop-btn">Улучшение</button>
     </div>
+  </div>
 
-    <!-- ==============================
-         CANVAS ДЛЯ PHASER
-    =============================== -->
-    <div id="game"></div>
+  <div id="bottom-info">Груз: 0/10</div>
 
-    <!-- Подключаем саму игру -->
-    <script src="game.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
