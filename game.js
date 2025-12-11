@@ -33,6 +33,20 @@ const TREE_REGEN_MS = 15000;
 
 const SAVE_KEY = 'lumberjack_save';
 
+// Глобальная helper-функция для создания кроны (используется при регене)
+function createCrown(scene, x, y) {
+  const points = [
+    0, -34,
+    22, -12,
+    34, 8,
+    16, 30,
+    -8, 26,
+    -28, 10,
+    -20, -10
+  ];
+  return scene.add.polygon(x, y, points, 0x2e8b57).setOrigin(0.5).setDepth(3);
+}
+
 /* ---------------------------
    Phaser конфиг (адаптивный)
    - mode: FIT -> подгоняет canvas в контейнер #game
@@ -88,19 +102,23 @@ function create() {
   // Игрок (если player ещё не создан в старом коде — создаём простой круг как ранее)
   player = scene.add.circle(400, 300, 16, 0x3333ff);
 
-  // Деревья — используем те же позиции
+  // Деревья — используем позиции, убираем дерево, которое накладывалось на склад
   const treePositions = [
     {x: 150, y: 120},
-    {x: 700, y: 80},
+    // removed overlapping tree {x: 700, y: 80},
     {x: 120, y: 420},
     {x: 500, y: 260},
-    {x: 650, y: 440}
+    {x: 650, y: 440},
+    {x: 300, y: 200}
   ];
 
+
+
   treePositions.forEach(pos => {
-    const spr = scene.add.circle(pos.x, pos.y, TREE_RADIUS, 0x2e8b57);
+    const crown = createCrown(scene, pos.x, pos.y);
     trees.push({
-      sprite: spr,
+      crown: crown,   // polygon for crown
+      stump: null,    // created when cut
       x: pos.x,
       y: pos.y,
       alive: true,
@@ -114,17 +132,8 @@ function create() {
   const whText = scene.add.text(whX-52, whY-12, 'Склад', {font:'14px Arial', fill:'#000'});
   window.warehouse = { x: whX, y: whY, sprite: whRect };
 
-  // UI тексты (Phaser)
-  moneyText = scene.add.text(10, 10, '', { font: '18px Arial', fill: '#000' }).setDepth(5);
-  warehouseText = scene.add.text(10, 36, '', { font: '16px Arial', fill: '#000' }).setDepth(5);
-  carryText = scene.add.text(10, 560, '', { font: '16px Arial', fill: '#000' }).setDepth(5);
-
-  // Shop text inside Phaser (backup) - оставляем для совместимости
-  shopButton = scene.add.text(680, 10, 'УЛУЧШЕНИЕ', { font: '18px Arial', fill: '#000', backgroundColor: '#ffd700' })
-    .setInteractive()
-    .on('pointerdown', () => {
-      openShop(scene);
-    });
+  // UI: используем DOM-HUD (index.html) — Phaser-тексты удалены чтобы не дублировать интерфейс
+  // Удаляем in-canvas кнопку улучшений (оставляем DOM-кнопку в углу)
 
   // Progress bar
   chopBarBg = scene.add.rectangle(0, 0, 120, 12, 0x000000).setVisible(false).setOrigin(0.5).setDepth(6);
@@ -172,6 +181,14 @@ function create() {
   // Настройка DOM-кнопки (если она есть)
   setupShopButton();
 
+  // Принудительно подгоняем размер Phaser canvas к контейнеру (#game)
+  try {
+    const gdiv = document.getElementById('game');
+    if (gdiv && window.game && window.game.scale) {
+      window.game.scale.resize(gdiv.clientWidth, gdiv.clientHeight);
+    }
+  } catch (e) {}
+
   // Попытка загрузки
   loadGame();
 }
@@ -180,6 +197,7 @@ function create() {
    update — логика игры (без изменений, + глобальные алиасы)
    ---------------------------- */
 function update(time, delta) {
+  const scene = game.scene.scenes[0];
   // Движение игрока
   if (!chopping && targetPoint) {
     const dx = targetPoint.x - player.x;
@@ -225,9 +243,10 @@ function update(time, delta) {
       carry = Math.min(carryMax, carry + 1);
       const t = targetPoint.targetTree;
       if (t) {
+        // replace crown with stump
+        if (t.crown) { t.crown.destroy(); t.crown = null; }
+        t.stump = scene.add.circle(t.x, t.y, TREE_RADIUS * 0.5, 0x8b4513).setDepth(4);
         t.alive = false;
-        t.sprite.setRadius(TREE_RADIUS * 0.5);
-        t.sprite.setFillStyle(0x8b4513);
         t.regenTimer = TREE_REGEN_MS;
       }
       chopping = false;
@@ -248,9 +267,10 @@ function update(time, delta) {
     if (!t.alive && t.regenTimer > 0) {
       t.regenTimer -= delta;
       if (t.regenTimer <= 0) {
+        // remove stump and recreate crown
+        if (t.stump) { t.stump.destroy(); t.stump = null; }
+        t.crown = createCrown(scene, t.x, t.y);
         t.alive = true;
-        t.sprite.setRadius(TREE_RADIUS);
-        t.sprite.setFillStyle(0x2e8b57);
         t.regenTimer = 0;
       }
     }
@@ -264,17 +284,14 @@ function update(time, delta) {
     }
   }
 
-  // Обновление UI (Phaser тексты)
-  if (moneyText) moneyText.setText(`💰 ${money}`);
-  if (warehouseText) warehouseText.setText(`🪵 Склад: ${warehouseStock}`);
-  if (carryText) carryText.setText(`Груз: ${carry}/${carryMax}`);
-
-  // Обновляем глобальные алиасы для DOM HUD (index.html)
+  // Обновление DOM-HUD (единственный источник интерфейса):
   try {
-    window.money = money;
-    window.warehouseStock = warehouseStock;
-    window.carry = carry;
-    window.carryMax = carryMax;
+    const m = document.getElementById('money');
+    const w = document.getElementById('wood-storage');
+    const c = document.getElementById('bottom-info');
+    if (m) m.textContent = `💰 ${money}`;
+    if (w) w.textContent = `🪵 ${warehouseStock}`;
+    if (c) c.textContent = `Груз: ${carry}/${carryMax}`;
   } catch(e){}
 }
 
@@ -372,13 +389,17 @@ function loadGame() {
       st.trees.forEach((tst, idx) => {
         if (!tst.alive) {
           trees[idx].alive = false;
-          trees[idx].sprite.setRadius(TREE_RADIUS * 0.5);
-          trees[idx].sprite.setFillStyle(0x8b4513);
+          // remove crown if exists
+          if (trees[idx].crown) { trees[idx].crown.destroy(); trees[idx].crown = null; }
+          // create stump
+          if (!trees[idx].stump) trees[idx].stump = window.currentScene.add.circle(tst.x, tst.y, TREE_RADIUS * 0.5, 0x8b4513).setDepth(4);
           trees[idx].regenTimer = tst.regenTimer || TREE_REGEN_MS;
         } else {
           trees[idx].alive = true;
-          trees[idx].sprite.setRadius(TREE_RADIUS);
-          trees[idx].sprite.setFillStyle(0x2e8b57);
+          // ensure crown exists
+          if (!trees[idx].crown) trees[idx].crown = createCrown(window.currentScene, tst.x, tst.y);
+          // destroy stump if any
+          if (trees[idx].stump) { trees[idx].stump.destroy(); trees[idx].stump = null; }
           trees[idx].regenTimer = 0;
         }
       });

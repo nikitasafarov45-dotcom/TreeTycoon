@@ -7,6 +7,23 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    (function(){
+      try {
+        if (window.Telegram && Telegram.WebApp) {
+          Telegram.WebApp.ready();
+          // try to expand to full height in the WebView
+          if (Telegram.WebApp.expand) {
+            try { Telegram.WebApp.expand(); } catch(e) {}
+          }
+          // hide back button if available
+          if (Telegram.WebApp.BackButton && Telegram.WebApp.BackButton.hide) {
+            try { Telegram.WebApp.BackButton.hide(); } catch(e) {}
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <div id="game"></div>
