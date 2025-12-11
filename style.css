@@ -1,0 +1,119 @@
+/* ===============================
+   ОБЩИЕ НАСТРОЙКИ СТРАНИЦЫ
+   =============================== */
+
+/* Убираем отступы браузера */
+body {
+    margin: 0;
+    padding: 0;
+
+    /* Telegram любит тёмно-серый фон, но игра будет занимать весь экран */
+    background-color: #1c1c1c;
+
+    /* Делаем так, чтобы всё содержимое было по центру */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* Высота во всю страницу */
+    height: 100vh;
+
+    /* Запрещаем скролл, чтобы игра не "ездила" */
+    overflow: hidden;
+
+    /* Шрифт интерфейса */
+    font-family: Arial, sans-serif;
+}
+
+
+/* ===============================
+   ОБЛАСТЬ ИГРЫ (CANVAS от Phaser)
+   =============================== */
+
+#game {
+    /* Фиксированные размеры — Phaser сам масштабирует картинку */
+    width: 100%;
+    height: 100%;
+
+    /* Черный фон вокруг, если игра меньше */
+    background-color: #000;
+}
+
+
+/* ===============================
+   ВЕРХНЯЯ ПАНЕЛЬ (HUD)
+   =============================== */
+
+#hud {
+    position: absolute;
+
+    /* Панель растягивается на всю ширину сверху */
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    /* Расстояние внутри панели */
+    padding: 10px;
+
+    /* Элементы в строку */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    /* Чтобы текст не сливался */
+    color: #fff;
+    font-size: 18px;
+
+    pointer-events: none; /* Чтобы клики проходили в игру */
+}
+
+
+/* Левая часть: деньги + древесина */
+#hud-left {
+    display: flex;
+    gap: 20px; /* расстояние между элементами */
+}
+
+
+/* Правая часть: кнопка улучшения */
+#hud-right {
+    pointer-events: auto; /* эта часть кликабельна */
+}
+
+
+/* ===============================
+    КНОПКА "УЛУЧШЕНИЕ"
+    =============================== */
+
+#shop-btn {
+    background-color: #4CAF50; /* зеленая кнопка */
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#shop-btn:hover {
+    background-color: #45A049;
+}
+
+
+/* ===============================
+   НИЖНЯЯ ПАНЕЛЬ (ГРУЗ)
+   =============================== */
+
+#bottom-info {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+
+    text-align: center;
+    padding: 10px;
+
+    font-size: 18px;
+    color: #fff;
+
+    pointer-events: none;
+}
