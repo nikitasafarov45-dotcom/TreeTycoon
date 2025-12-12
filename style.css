@@ -1,103 +1,104 @@
-/* style.css — адаптация под Telegram WebView + HUD поверх Phaser */
-
-/* ОСНОВНЫЕ СТИЛИ СТРАНИЦЫ */
+/* ==================== ОСНОВНЫЕ СТИЛИ ==================== */
 html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  background: #0f1720; /* тёмный фон вокруг игры */
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Courier New', monospace; /* Пиксельный шрифт */
+    background: #1a3c27; /* Темно-зеленый, как лес */
 }
 
-/* КОНТЕЙНЕР ДЛЯ ИГРЫ (Canvas будет внутри) */
 #game {
-  width: 100vw;
-  height: 100vh;
-  max-width: 100%;
-  max-height: 100%;
-  position: relative; /* важно: HUD абсолютен внутри этого блока */
-  display: block;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+    width: 100vw;
+    height: 100vh;
+    display: block;
 }
 
-/* Phaser canvas должен занимать весь контейнер */
-#game canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* HUD */
+/* ==================== ВЕРХНЯЯ ПАНЕЛЬ (HUD) ==================== */
 #hud {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  pointer-events: none; /* клики проходят в canvas, кроме кнопки */
-  z-index: 1000;
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    z-index: 1000;
 }
 
-/* левая часть HUD (деньги + склад) */
+/* Левая часть: ресурсы */
 #hud-left {
-  display: flex;
-  gap: 10px;
-  pointer-events: none;
+    display: flex;
+    gap: 12px;
+    background: rgba(139, 69, 19, 0.85); /* Коричневый, как дерево */
+    border: 3px solid #5d2906;
+    border-radius: 10px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 0 #3a1803;
 }
 
 #hud-left > div {
-  background: linear-gradient(180deg,#f3e9d0,#e7d4a6);
-  padding: 6px 10px;
-  border-radius: 8px;
-  color: #2c1600;
-  font-size: 16px;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+    color: #f1e6d6; /* Светлый песочный */
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
 }
 
-/* Правая часть HUD — кнопка (она кликабельна) */
+/* Правая часть: кнопка */
 #hud-right {
-  pointer-events: auto;
+    pointer-events: auto;
+    background: rgba(139, 69, 19, 0.85);
+    border: 3px solid #5d2906;
+    border-radius: 10px;
+    box-shadow: 0 4px 0 #3a1803;
 }
 
-/* Кнопка улучшения */
 #shop-btn {
-  background: linear-gradient(180deg,#f6cf6e,#e6a94a);
-  border: 2px solid #8b5a2b;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  color: #2c1600;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+    background: #8b5a2b; /* Деревянный цвет */
+    color: #f1e6d6;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-shadow: 1px 1px 0 #000;
+    transition: all 0.1s;
 }
 
-/* Нижняя панель груз */
-#bottom-info {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(180deg,#f3e9d0,#e7d4a6);
-  padding: 8px 12px;
-  border-radius: 10px;
-  color: #2c1600;
-  font-size: 16px;
-  z-index: 1000;
-  pointer-events: none;
-}
-
-/* небольшой отклик на кнопку */
 #shop-btn:active {
-  transform: translateY(1px);
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #3a1803;
 }
 
-/* адаптив на мелких экранах */
-@media (max-width: 420px) {
-  #hud-left > div, #bottom-info { font-size: 14px; padding: 6px; }
-  #shop-btn { padding: 6px 8px; font-size: 14px; }
+/* ==================== НИЖНЯЯ ПАНЕЛЬ (ГРУЗ) ==================== */
+#bottom-info {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(139, 69, 19, 0.85);
+    border: 3px solid #5d2906;
+    border-radius: 10px;
+    padding: 10px 20px;
+    color: #f1e6d6;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 4px 0 #3a1803;
+}
+
+/* ==================== МАГАЗИН (Phaser-окно) ==================== */
+/* Стили для магазина, который создаётся в game.js */
+/* Чтобы магазин соответствовал стилю, нужно обновить и код game.js */
+
+/* ==================== АДАПТИВНОСТЬ ==================== */
+@media (max-width: 600px) {
+    #hud-left > div, #bottom-info { font-size: 16px; padding: 6px 10px; }
+    #shop-btn { padding: 8px 12px; font-size: 15px; }
+    #hud-left { gap: 8px; padding: 6px 10px; }
 }

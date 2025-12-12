@@ -9,7 +9,7 @@ const CONFIG = {
     PRICE_PER_LOG: 3,
     TREE_REGEN_MS: 15000,
     SAVE_KEY: 'lumberjack_save',
-    WAREHOUSE_Y: 100,
+    WAREHOUSE_MARGIN: 120, // Отступ от краев для склада
     FLOWERS_COUNT: 12,
     BIRD_SPEED: 60
 };
@@ -404,16 +404,25 @@ function create() {
     Game.bird = Decorations.createBird(scene, width, height);
     Game.bird.setDepth(5);
     
-    // Склад
-    const whX = width - 80;
-    const whY = CONFIG.WAREHOUSE_Y;
+    // Склад (в правом нижнем углу с отступом)
+    const whX = width - CONFIG.WAREHOUSE_MARGIN; // Отступ справа
+    const whY = height - CONFIG.WAREHOUSE_MARGIN; // Отступ снизу
     
-    scene.add.rectangle(whX, whY, 140, 80, 0xaaaaaa)
+    // Основной прямоугольник склада
+    const warehouseRect = scene.add.rectangle(whX, whY, 140, 80, 0xaaaaaa)
         .setOrigin(0.5).setStrokeStyle(2, 0x666666);
     
-    scene.add.text(whX, whY - 12, 'Склад', {
-        font: '16px Arial', fill: '#000',
-        backgroundColor: 'rgba(255,255,255,0.8)',
+    // Крыша склада
+    const roof = scene.add.triangle(whX, whY - 45, 0, 0, 70, 0, 35, -25, 0x8b4513);
+    
+    // Дверь
+    const door = scene.add.rectangle(whX, whY + 10, 40, 50, 0x5d2906)
+        .setStrokeStyle(2, 0x3a1803);
+    
+    // Табличка "Склад"
+    const sign = scene.add.text(whX, whY - 55, 'Склад', {
+        font: '16px Arial', fill: '#ffffff',
+        backgroundColor: 'rgba(139, 69, 19, 0.9)',
         padding: {x: 10, y: 5}
     }).setOrigin(0.5);
     
