@@ -6,7 +6,7 @@ const CONFIG = {
     PLAYER_SPEED: 120,
     CHOP_DURATION: 1000,
     SELL_INTERVAL: 10000,
-    PRICE_PER_LOG: 10,
+    PRICE_PER_LOG: 3,
     TREE_REGEN_MS: 15000,
     SAVE_KEY: 'lumberjack_save',
     WAREHOUSE_Y: 100,
