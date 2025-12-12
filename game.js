@@ -9,10 +9,9 @@ const CONFIG = {
     PRICE_PER_LOG: 3,
     TREE_REGEN_MS: 15000,
     SAVE_KEY: 'lumberjack_save',
-    WAREHOUSE_MARGIN: 120, // Отступ от краев для склада
+    WAREHOUSE_Y: 150,
     FLOWERS_COUNT: 12,
-    BIRD_SPEED: 60,
-    MIN_TREE_DISTANCE_FROM_WAREHOUSE: 150 // Минимальное расстояние от склада до дерева
+    BIRD_SPEED: 60
 };
 
 // ==================== СОСТОЯНИЕ ====================
@@ -191,116 +190,14 @@ const Decorations = {
 
 // ==================== УПРАВЛЕНИЕ ДЕРЕВЬЯМИ ====================
 const TreeManager = {
-    getTreePositions(width, height, warehousePos) {
-        const positions = [];
-        const attemptsPerTree = 20; // Попыток разместить каждое дерево
-        
-        // Зоны, где нельзя размещать деревья (вокруг склада)
-        const noTreeZones = [];
-        if (warehousePos) {
-            noTreeZones.push({
-                x: warehousePos.x,
-                y: warehousePos.y,
-                radius: CONFIG.MIN_TREE_DISTANCE_FROM_WAREHOUSE
-            });
-        }
-        
-        // Функция проверки, можно ли разместить дерево в этой позиции
-        function isValidPosition(x, y, existingPositions) {
-            // Проверка на границы экрана
-            if (x < 50 || x > width - 50 || y < 50 || y > height - 150) {
-                return false;
-            }
-            
-            // Проверка на расстояние от других деревьев
-            for (const pos of existingPositions) {
-                const dist = Phaser.Math.Distance.Between(x, y, pos.x, pos.y);
-                if (dist < CONFIG.TREE_RADIUS * 3) {
-                    return false;
-                }
-            }
-            
-            // Проверка на расстояние от запретных зон (склада)
-            for (const zone of noTreeZones) {
-                const dist = Phaser.Math.Distance.Between(x, y, zone.x, zone.y);
-                if (dist < zone.radius) {
-                    return false;
-                }
-            }
-            
-            return true;
-        }
-        
-        // Пытаемся разместить 5 деревьев
-        for (let i = 0; i < 5; i++) {
-            let x, y;
-            let foundPosition = false;
-            
-            for (let attempt = 0; attempt < attemptsPerTree; attempt++) {
-                // Предпочтительные зоны для деревьев (левая и центральная часть экрана)
-                if (attempt < 10) {
-                    // Первые 10 попыток - предпочтительные зоны
-                    const section = i % 3;
-                    if (section === 0) {
-                        // Левая верхняя часть
-                        x = 50 + Math.random() * (width * 0.4);
-                        y = 50 + Math.random() * (height * 0.4);
-                    } else if (section === 1) {
-                        // Левая нижняя часть
-                        x = 50 + Math.random() * (width * 0.4);
-                        y = height * 0.5 + Math.random() * (height * 0.4 - 100);
-                    } else {
-                        // Центральная часть
-                        x = width * 0.3 + Math.random() * (width * 0.4);
-                        y = 100 + Math.random() * (height * 0.6 - 150);
-                    }
-                } else {
-                    // Случайные позиции
-                    x = 50 + Math.random() * (width - 100);
-                    y = 50 + Math.random() * (height - 200);
-                }
-                
-                if (isValidPosition(x, y, positions)) {
-                    positions.push({x: Math.floor(x), y: Math.floor(y)});
-                    foundPosition = true;
-                    break;
-                }
-            }
-            
-            // Если не нашли подходящую позицию, размещаем вручную с проверкой
-            if (!foundPosition) {
-                // Запасные позиции (смещенные влево от склада)
-                const fallbackPositions = [
-                    {x: width * 0.2, y: height * 0.2},
-                    {x: width * 0.15, y: height * 0.6},
-                    {x: width * 0.25, y: height * 0.4},
-                    {x: width * 0.35, y: height * 0.3},
-                    {x: width * 0.15, y: height * 0.3}
-                ];
-                
-                // Используем запасные позиции, отодвигая их от склада если нужно
-                const pos = fallbackPositions[i];
-                let adjustedX = pos.x;
-                let adjustedY = pos.y;
-                
-                // Если склад существует, отодвигаем дерево дальше от него
-                if (warehousePos) {
-                    const distToWarehouse = Phaser.Math.Distance.Between(adjustedX, adjustedY, warehousePos.x, warehousePos.y);
-                    if (distToWarehouse < CONFIG.MIN_TREE_DISTANCE_FROM_WAREHOUSE) {
-                        // Сдвигаем дерево влево и/или вверх
-                        adjustedX = Math.max(50, adjustedX - (CONFIG.MIN_TREE_DISTANCE_FROM_WAREHOUSE - distToWarehouse));
-                        if (warehousePos.y < height / 2) {
-                            // Склад в верхней части, сдвигаем дерево вниз
-                            adjustedY = Math.min(height - 150, adjustedY + 50);
-                        }
-                    }
-                }
-                
-                positions.push({x: Math.floor(adjustedX), y: Math.floor(adjustedY)});
-            }
-        }
-        
-        return positions;
+    getTreePositions(width, height) {
+        return [
+            {x: Math.floor(width * 0.2), y: Math.floor(height * 0.2)},
+            {x: Math.floor(width * 0.15), y: Math.floor(height * 0.7)},
+            {x: Math.floor(width * 0.6), y: Math.floor(height * 0.45)},
+            {x: Math.floor(width * 0.8), y: Math.floor(height * 0.75)},
+            {x: Math.floor(width * 0.35), y: Math.floor(height * 0.3)}
+        ];
     },
     
     createTree(scene, x, y) {
@@ -492,37 +389,12 @@ function create() {
         Telegram.WebApp.BackButton?.hide();
     }
     
-    // Сначала создаем склад, чтобы знать его позицию для размещения деревьев
-    const whX = width - CONFIG.WAREHOUSE_MARGIN;
-    const whY = height - CONFIG.WAREHOUSE_MARGIN;
-    
-    // Основной прямоугольник склада
-    const warehouseRect = scene.add.rectangle(whX, whY, 140, 80, 0xaaaaaa)
-        .setOrigin(0.5).setStrokeStyle(2, 0x666666);
-    
-    // Крыша склада
-    const roof = scene.add.triangle(whX, whY - 45, 0, 0, 70, 0, 35, -25, 0x8b4513);
-    
-    // Дверь
-    const door = scene.add.rectangle(whX, whY + 10, 40, 50, 0x5d2906)
-        .setStrokeStyle(2, 0x3a1803);
-    
-    // Табличка "Склад"
-    const sign = scene.add.text(whX, whY - 55, 'Склад', {
-        font: '16px Arial', fill: '#ffffff',
-        backgroundColor: 'rgba(139, 69, 19, 0.9)',
-        padding: {x: 10, y: 5}
-    }).setOrigin(0.5);
-    
-    window.warehouse = {x: whX, y: whY};
-    
     // Игрок
     Game.player = scene.add.circle(width/2, height/2, 16, 0x3333ff);
     Game.player.setOrigin(0.5, 0.5);
     
-    // Деревья - теперь позиции вычисляются с учетом склада
-    const warehousePos = {x: whX, y: whY};
-    const positions = TreeManager.getTreePositions(width, height, warehousePos);
+    // Деревья
+    const positions = TreeManager.getTreePositions(width, height);
     Game.trees = positions.map(pos => TreeManager.createTree(scene, pos.x, pos.y));
     
     // Цветы (как были)
@@ -531,6 +403,21 @@ function create() {
     // Птичка (как была)
     Game.bird = Decorations.createBird(scene, width, height);
     Game.bird.setDepth(5);
+    
+    // Склад
+    const whX = width - 80;
+    const whY = CONFIG.WAREHOUSE_Y;
+    
+    scene.add.rectangle(whX, whY, 140, 80, 0xaaaaaa)
+        .setOrigin(0.5).setStrokeStyle(2, 0x666666);
+    
+    scene.add.text(whX, whY - 12, 'Склад', {
+        font: '16px Arial', fill: '#000',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        padding: {x: 10, y: 5}
+    }).setOrigin(0.5);
+    
+    window.warehouse = {x: whX, y: whY};
     
     // Прогресс-бар
     Game.chopBarBg = scene.add.rectangle(0, 0, 120, 12, 0x000000)
